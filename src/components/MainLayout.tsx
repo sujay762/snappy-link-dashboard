@@ -25,7 +25,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <div className="container flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-2">
             <LinkIcon className="h-6 w-6 text-primary" />
-            <Link to="/" className="font-bold text-xl text-brand-slate">
+            <Link to="/" className="font-bold text-xl text-brand-darkBlack">
               Snappy.Link
             </Link>
           </div>

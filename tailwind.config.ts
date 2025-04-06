@@ -68,10 +68,10 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
         brand: {
-          blue: "#3B82F6",
-          indigo: "#6366F1",
+          black: "#000000",
+          darkBlack: "#0F0F0F",
           slate: "#1E293B",
-          lightBlue: "#F0F9FF",
+          lightGray: "#F0F0F0",
         },
       },
       borderRadius: {
