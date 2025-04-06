@@ -1,9 +1,9 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getUrlByShortCode, incrementUrlClicks } from "@/services/urlService";
 import { Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 
 const RedirectPage = () => {
   const { shortCode } = useParams();
@@ -22,40 +22,37 @@ const RedirectPage = () => {
 
       try {
         console.log("Fetching URL for short code:", shortCode);
+        const urlData = await getUrlByShortCode(shortCode);
         
-        // Allow access to this URL without authentication
-        // since we want anonymous users to be able to use short links
-        const { data: url, error } = await supabase
-          .from('urls')
-          .select('*')
-          .eq('short_code', shortCode)
-          .single();
-        
-        if (error || !url) {
+        if (!urlData) {
           console.log("URL not found for short code:", shortCode);
           setError("This short URL does not exist");
           setIsLoading(false);
           return;
         }
 
-        // Increment the click count without authentication
-        const { error: updateError } = await supabase.rpc('increment', { row_id: url.id });
-        if (updateError) {
-          console.error("Error incrementing click count:", updateError);
+        // Check if URL has expired
+        if (urlData.expiresAt && new Date(urlData.expiresAt) < new Date()) {
+          setError("This short URL has expired");
+          setIsLoading(false);
+          return;
         }
+
+        // Increment the click count
+        await incrementUrlClicks(urlData.id);
         
         // Show the destination before redirecting
-        setDestination(url.original_url);
+        setDestination(urlData.originalUrl);
         setIsLoading(false);
         
         // Redirect after a short delay
         setTimeout(() => {
           // Make sure to handle URLs without http/https prefix
-          let targetUrl = url.original_url;
-          if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-            targetUrl = 'https://' + targetUrl;
+          let url = urlData.originalUrl;
+          if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
           }
-          window.location.href = targetUrl;
+          window.location.href = url;
         }, 1500);
       } catch (error) {
         console.error("Error redirecting:", error);
