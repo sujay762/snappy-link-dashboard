@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -87,14 +89,15 @@
 @layer base {
   * {
     @apply border-border;
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-inter;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-poppins font-semibold tracking-tight;
   }
 
   h1 {
@@ -107,6 +110,26 @@
 
   h3 {
     @apply text-xl sm:text-2xl;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-in-out;
+  }
+
+  .animate-scale {
+    animation: scale 0.4s ease-in-out;
+  }
+  
+  .feature-card {
+    opacity: 0;
+    animation: fadeIn 0.8s ease-out forwards;
+    animation-delay: calc(var(--order) * 150ms);
   }
 }
 
@@ -123,4 +146,39 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Apply animation delay to feature cards */
+.feature-card:nth-child(1) {
+  --order: 1;
+}
+
+.feature-card:nth-child(2) {
+  --order: 2;
+}
+
+.feature-card:nth-child(3) {
+  --order: 3;
 }
