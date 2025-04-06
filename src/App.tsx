@@ -42,6 +42,9 @@ const App = () => (
               <Route path="/dashboard" element={<DashboardPage />} />
             </Route>
 
+            {/* Redirect Route - For compatibility with direct short URLs */}
+            <Route path="/:shortCode" element={<RedirectPage />} />
+
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
           </Routes>

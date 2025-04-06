@@ -3,31 +3,38 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getUrlByShortCode, incrementUrlClicks } from "@/services/urlService";
 import { Link as LinkIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const RedirectPage = () => {
   const { shortCode } = useParams();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [destination, setDestination] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const redirectToOriginalUrl = async () => {
       if (!shortCode) {
         setError("Invalid short URL");
+        setIsLoading(false);
         return;
       }
 
       try {
+        console.log("Fetching URL for short code:", shortCode);
         const urlData = await getUrlByShortCode(shortCode);
         
         if (!urlData) {
+          console.log("URL not found for short code:", shortCode);
           setError("This short URL does not exist");
+          setIsLoading(false);
           return;
         }
 
         // Check if URL has expired
         if (urlData.expiresAt && new Date(urlData.expiresAt) < new Date()) {
           setError("This short URL has expired");
+          setIsLoading(false);
           return;
         }
 
@@ -36,14 +43,21 @@ const RedirectPage = () => {
         
         // Show the destination before redirecting
         setDestination(urlData.originalUrl);
+        setIsLoading(false);
         
         // Redirect after a short delay
         setTimeout(() => {
-          window.location.href = urlData.originalUrl;
+          // Make sure to handle URLs without http/https prefix
+          let url = urlData.originalUrl;
+          if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+          }
+          window.location.href = url;
         }, 1500);
       } catch (error) {
         console.error("Error redirecting:", error);
         setError("Something went wrong while redirecting you");
+        setIsLoading(false);
       }
     };
 
@@ -58,18 +72,24 @@ const RedirectPage = () => {
           <h1 className="text-2xl font-bold mb-2">Snappy.Link</h1>
         </div>
 
-        {error ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-4"></div>
+            <p>Looking for your link...</p>
+          </div>
+        ) : error ? (
           <>
             <div className="text-destructive mb-6">{error}</div>
             <p className="mb-6">
               This link may have been removed or may have never existed.
             </p>
-            <a 
-              href="/"
-              className="text-primary hover:underline"
+            <Button 
+              variant="default"
+              onClick={() => navigate("/")}
+              className="w-full"
             >
               Go to homepage
-            </a>
+            </Button>
           </>
         ) : destination ? (
           <>
@@ -82,12 +102,7 @@ const RedirectPage = () => {
               {destination}
             </p>
           </>
-        ) : (
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mb-4"></div>
-            <p>Loading...</p>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
