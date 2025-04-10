@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +28,8 @@ const App = () => (
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
+            
+            {/* Legacy route - keep for compatibility */}
             <Route path="/r/:shortCode" element={<RedirectPage />} />
             
             {/* Auth Routes (accessible only when logged out) */}
@@ -42,7 +43,7 @@ const App = () => (
               <Route path="/dashboard" element={<DashboardPage />} />
             </Route>
 
-            {/* Redirect Route - For compatibility with direct short URLs */}
+            {/* Redirect Route - Direct short URLs without /r/ prefix */}
             <Route path="/:shortCode" element={<RedirectPage />} />
 
             {/* 404 Route */}

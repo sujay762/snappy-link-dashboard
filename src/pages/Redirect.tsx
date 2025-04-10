@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getUrlByShortCode, incrementUrlClicks } from "@/services/urlService";
 import { Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { ensureUrlHasProtocol } from "@/utils/url-utils";
 
 const RedirectPage = () => {
   const { shortCode } = useParams();
@@ -27,7 +27,7 @@ const RedirectPage = () => {
         
         if (!urlData) {
           console.log("URL not found for short code:", shortCode);
-          setError("This short URL does not exist");
+          setError("Something went wrong while redirecting you");
           setIsLoading(false);
           return;
         }
@@ -42,11 +42,8 @@ const RedirectPage = () => {
         // Redirect after a short delay
         setTimeout(() => {
           // Make sure to handle URLs without http/https prefix
-          let url = urlData.original_url;
-          if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            url = 'https://' + url;
-          }
-          window.location.href = url;
+          const fullUrl = ensureUrlHasProtocol(urlData.original_url);
+          window.location.href = fullUrl;
         }, 1500);
       } catch (error) {
         console.error("Error redirecting:", error);

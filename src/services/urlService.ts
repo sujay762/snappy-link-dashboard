@@ -54,7 +54,7 @@ export const createShortUrl = async (
       short_code: finalShortCode,
       title: title || null,
       clicks: 0
-    } as any)
+    })
     .select()
     .single();
   
@@ -105,9 +105,9 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | nu
 // Update a URL's click count
 export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
   try {
-    // Fix the type error by properly typing the RPC call
+    // Properly type the parameters for the RPC call
     const { error } = await supabase
-      .rpc('increment', { row_id: id } as Record<string, any>);
+      .rpc('increment', { row_id: id });
     
     if (error) {
       console.error('Error updating URL clicks:', error);
@@ -154,7 +154,7 @@ export const updateUrl = async (
   
   const { data, error } = await supabase
     .from('urls')
-    .update(updates as any)
+    .update(updates)
     .eq('id', id)
     .select()
     .single();
