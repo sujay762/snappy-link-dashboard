@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -12,9 +13,10 @@ export interface UrlData {
   updated_at: string;
 }
 
-// Generate a random short code
-const generateShortCode = (length = 6): string => {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+// Generate a random short code - using more readable characters and shorter length
+const generateShortCode = (length = 5): string => {
+  // Exclude similar looking characters like l, 1, I, O, 0 to improve readability
+  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -103,11 +105,9 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | nu
 // Update a URL's click count
 export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
   try {
-    // Use a proper type assertion for the RPC call
-    // The issue is that TypeScript doesn't know the return type of this specific RPC
+    // Fix the type error by properly typing the RPC call
     const { error } = await supabase
-      .rpc('increment', { row_id: id } as any)
-      .then(result => result as unknown as { error: any });
+      .rpc('increment', { row_id: id } as Record<string, any>);
     
     if (error) {
       console.error('Error updating URL clicks:', error);

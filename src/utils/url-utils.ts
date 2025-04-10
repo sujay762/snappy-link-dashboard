@@ -41,7 +41,27 @@ export const formatDate = (isoDate: string): string => {
   }).format(date);
 };
 
-// Generate a full short URL
-export const getFullShortUrl = (shortCode: string): string => {
+// List of common domain extensions for users to choose from
+export const commonDomainExtensions = [
+  { label: '.vercel.app', value: 'vercel.app' },
+  { label: '.web.app', value: 'web.app' },
+  { label: '.netlify.app', value: 'netlify.app' },
+  { label: '.dev', value: 'dev' },
+  { label: '.app', value: 'app' },
+  { label: '.link', value: 'link' },
+  // Default - use the current domain
+  { label: '(current domain)', value: '' }
+];
+
+// Generate a full short URL with optional custom domain
+export const getFullShortUrl = (shortCode: string, customDomain?: string): string => {
+  // If custom domain is provided, use it, otherwise use the current domain
+  if (customDomain) {
+    // Make sure the domain starts with http:// or https://
+    const protocol = window.location.protocol;
+    // Remove any protocol if it exists in the custom domain
+    const cleanDomain = customDomain.replace(/^https?:\/\//, '');
+    return `${protocol}//${cleanDomain}/r/${shortCode}`;
+  }
   return `${window.location.origin}/r/${shortCode}`;
 };

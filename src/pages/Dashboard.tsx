@@ -27,6 +27,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Copy, Trash, Edit, MoreVertical, BarChart, ExternalLink } from "lucide-react";
 import {
@@ -36,7 +44,13 @@ import {
   deleteUrl,
   UrlData,
 } from "@/services/urlService";
-import { isValidUrl, formatUrlForDisplay, formatDate, getFullShortUrl } from "@/utils/url-utils";
+import { 
+  isValidUrl, 
+  formatUrlForDisplay, 
+  formatDate, 
+  getFullShortUrl,
+  commonDomainExtensions 
+} from "@/utils/url-utils";
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -44,6 +58,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [longUrl, setLongUrl] = useState("");
   const [shortCode, setShortCode] = useState("");
+  const [customDomain, setCustomDomain] = useState("");
   const [editUrl, setEditUrl] = useState<UrlData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -150,8 +165,9 @@ const DashboardPage = () => {
   };
 
   // Handle URL copy
-  const copyToClipboard = (shortUrl: string) => {
-    navigator.clipboard.writeText(shortUrl);
+  const copyToClipboard = (url: UrlData) => {
+    const fullShortUrl = getFullShortUrl(url.short_code, customDomain);
+    navigator.clipboard.writeText(fullShortUrl);
     toast.success("URL copied to clipboard");
   };
 
@@ -173,7 +189,7 @@ const DashboardPage = () => {
           <CardContent>
             <form onSubmit={handleCreateShortUrl} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-12">
-                <div className="md:col-span-8">
+                <div className="md:col-span-6">
                   <Input
                     placeholder="Enter long URL (https://...)"
                     value={longUrl}
@@ -186,6 +202,22 @@ const DashboardPage = () => {
                     value={shortCode}
                     onChange={(e) => setShortCode(e.target.value)}
                   />
+                </div>
+                <div className="md:col-span-2">
+                  <Select onValueChange={setCustomDomain} defaultValue="">
+                    <SelectTrigger>
+                      <SelectValue placeholder="Domain" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {commonDomainExtensions.map((domain) => (
+                          <SelectItem key={domain.value} value={domain.value}>
+                            {domain.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="md:col-span-2">
                   <Button className="w-full bg-black hover:bg-gray-800" type="submit" disabled={isSubmitting}>
@@ -230,7 +262,8 @@ const DashboardPage = () => {
                   </TableHeader>
                   <TableBody>
                     {urls.map((url) => {
-                      const fullShortUrl = getFullShortUrl(url.short_code);
+                      const fullShortUrl = getFullShortUrl(url.short_code, customDomain);
+                      const domain = customDomain ? customDomain : window.location.host;
                       
                       return (
                         <TableRow key={url.id}>
@@ -241,7 +274,7 @@ const DashboardPage = () => {
                               rel="noopener noreferrer"
                               className="flex items-center text-black hover:underline"
                             >
-                              {window.location.host}/r/{url.short_code}
+                              {domain}/r/{url.short_code}
                               <ExternalLink className="ml-1 h-3 w-3" />
                             </a>
                           </TableCell>
@@ -266,7 +299,7 @@ const DashboardPage = () => {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => copyToClipboard(fullShortUrl)}>
+                                <DropdownMenuItem onClick={() => copyToClipboard(url)}>
                                   <Copy className="mr-2 h-4 w-4" />
                                   Copy
                                 </DropdownMenuItem>
