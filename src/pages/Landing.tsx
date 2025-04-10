@@ -29,8 +29,7 @@ const LandingPage = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               {user ? (
                 <Button
-                  as={Link}
-                  to="/dashboard"
+                  onClick={() => window.location.href = '/dashboard'}
                   className="text-white bg-black hover:bg-gray-800 rounded-full px-8 py-6 text-lg"
                 >
                   Go to Dashboard
@@ -107,8 +106,7 @@ const LandingPage = () => {
           </p>
           {user ? (
             <Button
-              as={Link}
-              to="/dashboard"
+              onClick={() => window.location.href = '/dashboard'}
               className="text-white bg-black hover:bg-gray-800 rounded-full px-8 py-6 text-lg"
             >
               Go to Dashboard
