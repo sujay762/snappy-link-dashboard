@@ -15,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName?: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName?: string, skipEmailConfirmation?: boolean) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -104,7 +104,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    fullName?: string, 
+    skipEmailConfirmation: boolean = true
+  ) => {
     try {
       setLoading(true);
       
@@ -115,12 +120,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: fullName || null,
           },
+          emailRedirectTo: window.location.origin,
+          // Skip email confirmation for faster testing/development
+          emailConfirm: !skipEmailConfirmation
         },
       });
       
       if (error) throw error;
       
-      toast.success('Account created successfully! Please check your email for verification.');
+      if (skipEmailConfirmation) {
+        toast.success('Account created successfully! You can now log in.');
+      } else {
+        toast.success('Account created successfully! Please check your email for verification.');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Failed to sign up');
       throw error;

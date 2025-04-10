@@ -64,7 +64,8 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
     try {
       setIsLoading(true);
-      await signUp(email, password, fullName);
+      // Pass true to skipEmailConfirmation for faster signup
+      await signUp(email, password, fullName, true);
       onClose();
     } catch (err: any) {
       setError(err.message || "Failed to create account");

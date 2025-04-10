@@ -104,9 +104,9 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | nu
 // Update a URL's click count
 export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
   try {
-    // Type assertion for the entire function call to bypass TypeScript's type checking
+    // Fix TypeScript error with a more precise type assertion for the RPC call
     const { error } = await (supabase
-      .rpc('increment', { row_id: id }) as unknown as { error: any });
+      .rpc('increment', { row_id: id }) as unknown as Promise<{ error: any }>);
     
     if (error) {
       console.error('Error updating URL clicks:', error);
