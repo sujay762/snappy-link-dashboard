@@ -27,7 +27,7 @@ const RedirectPage = () => {
         
         if (!urlData) {
           console.log("URL not found for short code:", shortCode);
-          setError("Something went wrong while redirecting you");
+          setError("This link may have been removed or may have never existed.");
           setIsLoading(false);
           return;
         }

@@ -47,7 +47,7 @@ export const formatDate = (isoDate: string): string => {
 
 // List of common domain extensions for users to choose from
 export const commonDomainExtensions = [
-  { label: '(current domain)', value: 'default' },
+  { label: 'snappy.link', value: 'default' },
   { label: '.vercel.app', value: 'vercel.app' },
   { label: '.web.app', value: 'web.app' },
   { label: '.netlify.app', value: 'netlify.app' },

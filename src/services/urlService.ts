@@ -171,7 +171,7 @@ export const incrementUrlClicks = async (urlId: string): Promise<number> => {
     }
     
     // Fix: Cast data to number to satisfy TypeScript
-    return data as number;
+    return data as unknown as number;
   } catch (error) {
     console.error("Error incrementing clicks:", error);
     return 0;
