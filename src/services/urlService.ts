@@ -103,27 +103,32 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | nu
 
 // Update a URL's click count
 export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
-  const { data, error } = await supabase
-    .rpc('increment', { row_id: id });
-  
-  if (error) {
-    console.error('Error updating URL clicks:', error);
-    throw new Error(error.message);
+  try {
+    const { error } = await supabase
+      .rpc('increment', { row_id: id });
+    
+    if (error) {
+      console.error('Error updating URL clicks:', error);
+      throw new Error(error.message);
+    }
+    
+    // Fetch the updated URL
+    const { data: updatedUrl, error: fetchError } = await supabase
+      .from('urls')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError) {
+      console.error('Error fetching updated URL:', fetchError);
+      throw new Error(fetchError.message);
+    }
+    
+    return updatedUrl as UrlData;
+  } catch (error) {
+    console.error('Error in incrementUrlClicks:', error);
+    throw error;
   }
-  
-  // Fetch the updated URL
-  const { data: updatedUrl, error: fetchError } = await supabase
-    .from('urls')
-    .select('*')
-    .eq('id', id)
-    .single();
-  
-  if (fetchError) {
-    console.error('Error fetching updated URL:', fetchError);
-    throw new Error(fetchError.message);
-  }
-  
-  return updatedUrl as UrlData;
 };
 
 // Update a URL
