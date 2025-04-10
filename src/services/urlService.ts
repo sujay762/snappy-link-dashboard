@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -104,9 +103,11 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | nu
 // Update a URL's click count
 export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
   try {
-    // Fix TypeScript error with a more precise type assertion for the RPC call
-    const { error } = await (supabase
-      .rpc('increment', { row_id: id }) as unknown as Promise<{ error: any }>);
+    // Use a proper type assertion for the RPC call
+    // The issue is that TypeScript doesn't know the return type of this specific RPC
+    const { error } = await supabase
+      .rpc('increment', { row_id: id } as any)
+      .then(result => result as unknown as { error: any });
     
     if (error) {
       console.error('Error updating URL clicks:', error);

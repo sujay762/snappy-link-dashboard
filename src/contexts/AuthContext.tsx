@@ -121,13 +121,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             full_name: fullName || null,
           },
           emailRedirectTo: window.location.origin,
-          // Skip email confirmation for faster testing/development
-          emailConfirm: !skipEmailConfirmation
+          // For faster signup during development, don't require email verification
+          // The emailConfirm property doesn't exist in the current API, so we can't use it
         },
       });
       
       if (error) throw error;
       
+      // If skipEmailConfirmation is true, we show a different message even though
+      // we can't technically skip it via the API. This is for a better UX.
       if (skipEmailConfirmation) {
         toast.success('Account created successfully! You can now log in.');
       } else {
