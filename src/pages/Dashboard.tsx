@@ -58,7 +58,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [longUrl, setLongUrl] = useState("");
   const [shortCode, setShortCode] = useState("");
-  const [customDomain, setCustomDomain] = useState("");
+  const [customDomain, setCustomDomain] = useState("default");
   const [editUrl, setEditUrl] = useState<UrlData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -204,7 +204,7 @@ const DashboardPage = () => {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Select onValueChange={setCustomDomain} defaultValue="">
+                  <Select onValueChange={setCustomDomain} defaultValue="default">
                     <SelectTrigger>
                       <SelectValue placeholder="Domain" />
                     </SelectTrigger>
@@ -263,7 +263,7 @@ const DashboardPage = () => {
                   <TableBody>
                     {urls.map((url) => {
                       const fullShortUrl = getFullShortUrl(url.short_code, customDomain);
-                      const domain = customDomain ? customDomain : window.location.host;
+                      const domain = customDomain && customDomain !== 'default' ? customDomain : window.location.host;
                       
                       return (
                         <TableRow key={url.id}>
@@ -274,7 +274,7 @@ const DashboardPage = () => {
                               rel="noopener noreferrer"
                               className="flex items-center text-black hover:underline"
                             >
-                              {domain}/r/{url.short_code}
+                              {domain}/{url.short_code}
                               <ExternalLink className="ml-1 h-3 w-3" />
                             </a>
                           </TableCell>

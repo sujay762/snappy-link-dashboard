@@ -47,6 +47,7 @@ export const formatDate = (isoDate: string): string => {
 
 // List of common domain extensions for users to choose from
 export const commonDomainExtensions = [
+  { label: '(current domain)', value: 'default' },
   { label: '.vercel.app', value: 'vercel.app' },
   { label: '.web.app', value: 'web.app' },
   { label: '.netlify.app', value: 'netlify.app' },
@@ -56,13 +57,16 @@ export const commonDomainExtensions = [
   { label: '.site', value: 'site' },
   { label: '.codes', value: 'codes' },
   { label: '.xyz', value: 'xyz' },
-  // Default - use the current domain
-  { label: '(current domain)', value: 'default' }
+  { label: '.tech', value: 'tech' },
+  { label: '.io', value: 'io' },
+  { label: '.me', value: 'me' },
+  { label: '.co', value: 'co' },
+  { label: '.digital', value: 'digital' }
 ];
 
 // Generate a full short URL with optional custom domain
 export const getFullShortUrl = (shortCode: string, customDomain?: string): string => {
-  // If custom domain is provided, use it, otherwise use the current domain
+  // If custom domain is provided and not the default option, use it
   if (customDomain && customDomain !== 'default') {
     // Make sure the domain starts with http:// or https://
     const protocol = window.location.protocol;

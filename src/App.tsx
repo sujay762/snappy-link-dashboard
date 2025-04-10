@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -43,7 +44,7 @@ const App = () => (
               <Route path="/dashboard" element={<DashboardPage />} />
             </Route>
 
-            {/* Redirect Route - Direct short URLs without /r/ prefix */}
+            {/* Direct short URLs without /r/ prefix */}
             <Route path="/:shortCode" element={<RedirectPage />} />
 
             {/* 404 Route */}

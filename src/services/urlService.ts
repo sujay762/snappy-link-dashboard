@@ -1,22 +1,185 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from "@/integrations/supabase/client";
 
+// URL data interface
 export interface UrlData {
   id: string;
   user_id: string;
   original_url: string;
   short_code: string;
-  title: string | null;
-  clicks: number;
   created_at: string;
   updated_at: string;
+  clicks: number;
+  title: string | null;
 }
 
-// Generate a random short code - using more readable characters and shorter length
-const generateShortCode = (length = 5): string => {
-  // Exclude similar looking characters like l, 1, I, O, 0 to improve readability
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+// Create a short URL
+export const createShortUrl = async (
+  userId: string,
+  originalUrl: string,
+  shortCode?: string
+): Promise<UrlData> => {
+  try {
+    // If no custom short code is provided, generate a random one
+    // Make it shorter (6 chars) for better usability
+    const generatedShortCode = shortCode || generateShortCode(6);
+    
+    // Check if the short code already exists
+    const { data: existingUrl } = await supabase
+      .from('urls')
+      .select('short_code')
+      .eq('short_code', generatedShortCode)
+      .single();
+    
+    if (existingUrl) {
+      throw new Error("This custom URL is already taken. Please try another one.");
+    }
+    
+    // Create the new short URL in the database
+    const { data, error } = await supabase
+      .from('urls')
+      .insert([
+        {
+          id: uuidv4(),
+          user_id: userId,
+          original_url: originalUrl,
+          short_code: generatedShortCode,
+          clicks: 0
+        }
+      ])
+      .select('*')
+      .single();
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data;
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to create short URL");
+  }
+};
+
+// Get all URLs for a user
+export const getUserUrls = async (userId: string): Promise<UrlData[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('urls')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data || [];
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to fetch URLs");
+  }
+};
+
+// Update a URL
+export const updateUrl = async (
+  urlId: string,
+  updates: {
+    original_url?: string;
+    short_code?: string;
+    title?: string | null;
+  }
+): Promise<UrlData | null> => {
+  try {
+    // Check if the short code is being updated and already exists
+    if (updates.short_code) {
+      const { data: existingUrl } = await supabase
+        .from('urls')
+        .select('id, short_code')
+        .eq('short_code', updates.short_code)
+        .neq('id', urlId)
+        .maybeSingle();
+      
+      if (existingUrl) {
+        throw new Error("This custom URL is already taken. Please try another one.");
+      }
+    }
+    
+    const { data, error } = await supabase
+      .from('urls')
+      .update(updates)
+      .eq('id', urlId)
+      .select('*')
+      .single();
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data;
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to update URL");
+  }
+};
+
+// Delete a URL
+export const deleteUrl = async (urlId: string): Promise<void> => {
+  try {
+    const { error } = await supabase
+      .from('urls')
+      .delete()
+      .eq('id', urlId);
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+  } catch (error: any) {
+    throw new Error(error.message || "Failed to delete URL");
+  }
+};
+
+// Get URL by short code
+export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('urls')
+      .select('*')
+      .eq('short_code', shortCode)
+      .maybeSingle();
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error fetching URL:", error);
+    return null;
+  }
+};
+
+// Increment URL clicks
+export const incrementUrlClicks = async (urlId: string): Promise<number> => {
+  try {
+    // Call the RPC function to increment clicks and return the new count
+    const { data, error } = await supabase.rpc('increment_url_clicks', {
+      url_id: urlId
+    });
+    
+    if (error) {
+      throw new Error(error.message);
+    }
+    
+    // The RPC function returns the new click count as a number
+    return data as number;
+  } catch (error) {
+    console.error("Error incrementing clicks:", error);
+    return 0;
+  }
+};
+
+// Helper function to generate a random short code
+const generateShortCode = (length: number = 6): string => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
@@ -24,160 +187,3 @@ const generateShortCode = (length = 5): string => {
   return result;
 };
 
-// Create a new short URL
-export const createShortUrl = async (
-  userId: string,
-  originalUrl: string,
-  shortCode?: string,
-  title?: string
-): Promise<UrlData> => {
-  const finalShortCode = shortCode || generateShortCode();
-  
-  // Check if custom code is already in use
-  if (shortCode) {
-    const { data: existingUrl } = await supabase
-      .from('urls')
-      .select('*')
-      .eq('short_code', shortCode)
-      .single();
-      
-    if (existingUrl) {
-      throw new Error('This custom short code is already in use');
-    }
-  }
-  
-  const { data, error } = await supabase
-    .from('urls')
-    .insert({
-      user_id: userId,
-      original_url: originalUrl,
-      short_code: finalShortCode,
-      title: title || null,
-      clicks: 0
-    })
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error creating URL:', error);
-    throw new Error(error.message);
-  }
-  
-  return data as UrlData;
-};
-
-// Get all URLs for a specific user
-export const getUserUrls = async (userId: string): Promise<UrlData[]> => {
-  const { data, error } = await supabase
-    .from('urls')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  
-  if (error) {
-    console.error('Error fetching URLs:', error);
-    throw new Error(error.message);
-  }
-  
-  return data as UrlData[];
-};
-
-// Get a URL by its short code
-export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | null> => {
-  const { data, error } = await supabase
-    .from('urls')
-    .select('*')
-    .eq('short_code', shortCode)
-    .single();
-  
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // Code for "No rows returned" error
-      return null;
-    }
-    console.error('Error fetching URL:', error);
-    throw new Error(error.message);
-  }
-  
-  return data as UrlData;
-};
-
-// Update a URL's click count
-export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
-  try {
-    // Properly type the parameters for the RPC call
-    const { error } = await supabase
-      .rpc('increment', { row_id: id });
-    
-    if (error) {
-      console.error('Error updating URL clicks:', error);
-      throw new Error(error.message);
-    }
-    
-    // Fetch the updated URL
-    const { data: updatedUrl, error: fetchError } = await supabase
-      .from('urls')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (fetchError) {
-      console.error('Error fetching updated URL:', fetchError);
-      throw new Error(fetchError.message);
-    }
-    
-    return updatedUrl as UrlData;
-  } catch (error) {
-    console.error('Error in incrementUrlClicks:', error);
-    throw error;
-  }
-};
-
-// Update a URL
-export const updateUrl = async (
-  id: string,
-  updates: Partial<Pick<UrlData, 'original_url' | 'short_code' | 'title'>>
-): Promise<UrlData | null> => {
-  // Check if trying to update to an existing short code
-  if (updates.short_code) {
-    const { data: existingUrl } = await supabase
-      .from('urls')
-      .select('*')
-      .eq('short_code', updates.short_code)
-      .neq('id', id) // Exclude the current URL
-      .single();
-    
-    if (existingUrl) {
-      throw new Error('This custom short code is already in use');
-    }
-  }
-  
-  const { data, error } = await supabase
-    .from('urls')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) {
-    console.error('Error updating URL:', error);
-    throw new Error(error.message);
-  }
-  
-  return data as UrlData;
-};
-
-// Delete a URL
-export const deleteUrl = async (id: string): Promise<boolean> => {
-  const { error } = await supabase
-    .from('urls')
-    .delete()
-    .eq('id', id);
-  
-  if (error) {
-    console.error('Error deleting URL:', error);
-    throw new Error(error.message);
-  }
-  
-  return true;
-};
