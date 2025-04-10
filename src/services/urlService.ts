@@ -53,7 +53,7 @@ export const createShortUrl = async (
       short_code: finalShortCode,
       title: title || null,
       clicks: 0
-    })
+    } as any)
     .select()
     .single();
   
@@ -104,9 +104,9 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | nu
 // Update a URL's click count
 export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
   try {
-    // Use any type to bypass TypeScript's strict checking for the RPC call
-    const { error } = await supabase
-      .rpc('increment', { row_id: id } as any);
+    // Type assertion for the entire function call to bypass TypeScript's type checking
+    const { error } = await (supabase
+      .rpc('increment', { row_id: id }) as unknown as { error: any });
     
     if (error) {
       console.error('Error updating URL clicks:', error);
