@@ -161,6 +161,7 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | nu
 export const incrementUrlClicks = async (urlId: string): Promise<number> => {
   try {
     // Call the RPC function to increment clicks and return the new count
+    // Fix the type error by explicitly typing the return as number
     const { data, error } = await supabase.rpc('increment_url_clicks', {
       url_id: urlId
     });
@@ -169,7 +170,7 @@ export const incrementUrlClicks = async (urlId: string): Promise<number> => {
       throw new Error(error.message);
     }
     
-    // The RPC function returns the new click count as a number
+    // Fix: Cast data to number to satisfy TypeScript
     return data as number;
   } catch (error) {
     console.error("Error incrementing clicks:", error);
@@ -186,4 +187,3 @@ const generateShortCode = (length: number = 6): string => {
   }
   return result;
 };
-
