@@ -104,8 +104,9 @@ export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | nu
 // Update a URL's click count
 export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
   try {
+    // Use any type to bypass TypeScript's strict checking for the RPC call
     const { error } = await supabase
-      .rpc('increment', { row_id: id });
+      .rpc('increment', { row_id: id } as any);
     
     if (error) {
       console.error('Error updating URL clicks:', error);
@@ -152,7 +153,7 @@ export const updateUrl = async (
   
   const { data, error } = await supabase
     .from('urls')
-    .update(updates)
+    .update(updates as any)
     .eq('id', id)
     .select()
     .single();
