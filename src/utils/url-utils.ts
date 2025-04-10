@@ -1,12 +1,4 @@
 
-// Available domains for short URLs
-export const domains = [
-  { value: 'short.ly', label: 'short.ly' },
-  { value: 'vercel.app', label: 'vercel.app' },
-  { value: 'web.app', label: 'web.app' },
-  { value: 'snappy.link', label: 'snappy.link' },
-];
-
 // Validate a URL
 export const isValidUrl = (url: string): boolean => {
   try {
@@ -50,7 +42,6 @@ export const formatDate = (isoDate: string): string => {
 };
 
 // Generate a full short URL
-export const getFullShortUrl = (shortCode: string, domain: string): string => {
-  // In production, this would use the actual domain
+export const getFullShortUrl = (shortCode: string): string => {
   return `${window.location.origin}/r/${shortCode}`;
 };

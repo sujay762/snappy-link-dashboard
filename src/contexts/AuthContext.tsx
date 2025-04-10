@@ -1,17 +1,21 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User } from '@supabase/supabase-js';
 
-interface User {
+interface UserProfile {
   id: string;
   email: string;
-  provider?: string;
+  full_name: string | null;
+  avatar_url: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
+  userProfile: UserProfile | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -30,68 +34,91 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const checkUser = async () => {
-      try {
-        // When Supabase is connected, replace with actual authentication check
-        const storedUser = localStorage.getItem('snappy_user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setLoading(true);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          setUserProfile(data as UserProfile);
+        } else {
+          setUserProfile(null);
         }
         
-        // Get total users count
-        const storedUsers = localStorage.getItem('snappy_all_users');
-        const allUsers = storedUsers ? JSON.parse(storedUsers) : [];
-        setTotalUsers(allUsers.length);
-      } catch (error) {
-        console.error('Error checking auth state:', error);
-      } finally {
         setLoading(false);
       }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        // Fetch user profile in a setTimeout to avoid potential auth deadlock
+        setTimeout(async () => {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          setUserProfile(data as UserProfile);
+          setLoading(false);
+        }, 0);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Get total users count
+    const fetchTotalUsers = async () => {
+      const { count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      
+      setTotalUsers(count || 0);
     };
 
-    checkUser();
+    fetchTotalUsers();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const updateTotalUsers = () => {
-    // Get all users from storage
-    const storedUsers = localStorage.getItem('snappy_all_users');
-    const allUsers = storedUsers ? JSON.parse(storedUsers) : [];
-    setTotalUsers(allUsers.length);
-  };
-
-  const addUserToStorage = (newUser: User) => {
-    // Get all users from storage
-    const storedUsers = localStorage.getItem('snappy_all_users');
-    const allUsers = storedUsers ? JSON.parse(storedUsers) : [];
-    
-    // Check if user already exists
-    const userExists = allUsers.some((u: User) => u.id === newUser.id);
-    
-    if (!userExists) {
-      allUsers.push(newUser);
-      localStorage.setItem('snappy_all_users', JSON.stringify(allUsers));
-    }
-    
-    updateTotalUsers();
-  };
-
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, fullName?: string) => {
     try {
       setLoading(true);
-      // Mock signup - replace with Supabase auth when connected
-      const newUser = { id: `user_${Date.now()}`, email };
-      localStorage.setItem('snappy_user', JSON.stringify(newUser));
-      setUser(newUser);
       
-      // Add to all users list
-      addUserToStorage(newUser);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName || null,
+          },
+        },
+      });
       
-      toast.success('Account created successfully!');
+      if (error) throw error;
+      
+      toast.success('Account created successfully! Please check your email for verification.');
     } catch (error: any) {
       toast.error(error.message || 'Failed to sign up');
       throw error;
@@ -103,10 +130,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      // Mock login - replace with Supabase auth when connected
-      const mockUser = { id: `user_${Date.now()}`, email };
-      localStorage.setItem('snappy_user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
       toast.success('Logged in successfully!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to sign in');
@@ -119,19 +150,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      // Mock Google sign in - replace with Supabase auth when connected
-      const googleUser = { 
-        id: `google_user_${Date.now()}`, 
-        email: `user${Date.now()}@gmail.com`,
-        provider: 'google'
-      };
-      localStorage.setItem('snappy_user', JSON.stringify(googleUser));
-      setUser(googleUser);
       
-      // Add to all users list
-      addUserToStorage(googleUser);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
       
-      toast.success('Logged in with Google successfully!');
+      if (error) throw error;
+      
+      // Success message will be shown when the user returns from the OAuth flow
     } catch (error: any) {
       toast.error(error.message || 'Failed to sign in with Google');
       throw error;
@@ -143,9 +172,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       setLoading(true);
-      // Mock logout - replace with Supabase auth when connected
-      localStorage.removeItem('snappy_user');
-      setUser(null);
+      
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) throw error;
+      
       toast.success('Logged out successfully!');
     } catch (error: any) {
       toast.error(error.message || 'Failed to sign out');
@@ -157,6 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     user,
+    userProfile,
     loading,
     signUp,
     signIn,

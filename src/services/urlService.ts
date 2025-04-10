@@ -1,30 +1,17 @@
 
+import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
 export interface UrlData {
   id: string;
-  userId: string;
-  originalUrl: string;
-  shortCode: string;
-  domain: string;
+  user_id: string;
+  original_url: string;
+  short_code: string;
+  title: string | null;
   clicks: number;
-  createdAt: string;
-  expiresAt?: string | null;
+  created_at: string;
+  updated_at: string;
 }
-
-// Will be replaced with Supabase database calls
-const STORAGE_KEY = 'snappy_urls';
-
-// Helper to get URLs from localStorage
-const getUrlsFromStorage = (): UrlData[] => {
-  const storedUrls = localStorage.getItem(STORAGE_KEY);
-  return storedUrls ? JSON.parse(storedUrls) : [];
-};
-
-// Helper to save URLs to localStorage
-const saveUrlsToStorage = (urls: UrlData[]): void => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(urls));
-};
 
 // Generate a random short code
 const generateShortCode = (length = 6): string => {
@@ -40,107 +27,144 @@ const generateShortCode = (length = 6): string => {
 export const createShortUrl = async (
   userId: string,
   originalUrl: string,
-  domain: string = 'short.ly',
-  customShortCode?: string,
-  expiresAt?: string
+  shortCode?: string,
+  title?: string
 ): Promise<UrlData> => {
-  const urls = getUrlsFromStorage();
-  
-  // Use custom code or generate a random one
-  const shortCode = customShortCode || generateShortCode();
+  const finalShortCode = shortCode || generateShortCode();
   
   // Check if custom code is already in use
-  if (customShortCode) {
-    const exists = urls.some(url => url.shortCode === customShortCode);
-    if (exists) {
+  if (shortCode) {
+    const { data: existingUrl } = await supabase
+      .from('urls')
+      .select('*')
+      .eq('short_code', shortCode)
+      .single();
+      
+    if (existingUrl) {
       throw new Error('This custom short code is already in use');
     }
   }
   
-  const newUrl: UrlData = {
-    id: uuidv4(),
-    userId,
-    originalUrl,
-    shortCode,
-    domain,
-    clicks: 0,
-    createdAt: new Date().toISOString(),
-    expiresAt: expiresAt || null
-  };
+  const { data, error } = await supabase
+    .from('urls')
+    .insert({
+      user_id: userId,
+      original_url: originalUrl,
+      short_code: finalShortCode,
+      title: title || null,
+      clicks: 0
+    })
+    .select()
+    .single();
   
-  urls.push(newUrl);
-  saveUrlsToStorage(urls);
+  if (error) {
+    console.error('Error creating URL:', error);
+    throw new Error(error.message);
+  }
   
-  return newUrl;
+  return data as UrlData;
 };
 
 // Get all URLs for a specific user
 export const getUserUrls = async (userId: string): Promise<UrlData[]> => {
-  const urls = getUrlsFromStorage();
-  return urls.filter(url => url.userId === userId);
+  const { data, error } = await supabase
+    .from('urls')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error('Error fetching URLs:', error);
+    throw new Error(error.message);
+  }
+  
+  return data as UrlData[];
 };
 
 // Get a URL by its short code
 export const getUrlByShortCode = async (shortCode: string): Promise<UrlData | null> => {
-  const urls = getUrlsFromStorage();
-  const url = urls.find(url => url.shortCode === shortCode);
-  return url || null;
+  const { data, error } = await supabase
+    .from('urls')
+    .select('*')
+    .eq('short_code', shortCode)
+    .single();
+  
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // Code for "No rows returned" error
+      return null;
+    }
+    console.error('Error fetching URL:', error);
+    throw new Error(error.message);
+  }
+  
+  return data as UrlData;
 };
 
 // Update a URL's click count
 export const incrementUrlClicks = async (id: string): Promise<UrlData | null> => {
-  const urls = getUrlsFromStorage();
-  const urlIndex = urls.findIndex(url => url.id === id);
+  const { data, error } = await supabase
+    .from('urls')
+    .update({
+      clicks: supabase.rpc('increment', { row_id: id })
+    })
+    .eq('id', id)
+    .select()
+    .single();
   
-  if (urlIndex === -1) {
-    return null;
+  if (error) {
+    console.error('Error updating URL clicks:', error);
+    throw new Error(error.message);
   }
   
-  urls[urlIndex].clicks += 1;
-  saveUrlsToStorage(urls);
-  
-  return urls[urlIndex];
+  return data as UrlData;
 };
 
 // Update a URL
 export const updateUrl = async (
   id: string,
-  updates: Partial<Pick<UrlData, 'originalUrl' | 'shortCode' | 'domain' | 'expiresAt'>>
+  updates: Partial<Pick<UrlData, 'original_url' | 'short_code' | 'title'>>
 ): Promise<UrlData | null> => {
-  const urls = getUrlsFromStorage();
-  const urlIndex = urls.findIndex(url => url.id === id);
-  
-  if (urlIndex === -1) {
-    return null;
-  }
-  
   // Check if trying to update to an existing short code
-  if (updates.shortCode && updates.shortCode !== urls[urlIndex].shortCode) {
-    const exists = urls.some(url => url.shortCode === updates.shortCode);
-    if (exists) {
+  if (updates.short_code) {
+    const { data: existingUrl } = await supabase
+      .from('urls')
+      .select('*')
+      .eq('short_code', updates.short_code)
+      .neq('id', id) // Exclude the current URL
+      .single();
+    
+    if (existingUrl) {
       throw new Error('This custom short code is already in use');
     }
   }
   
-  urls[urlIndex] = {
-    ...urls[urlIndex],
-    ...updates
-  };
+  const { data, error } = await supabase
+    .from('urls')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
   
-  saveUrlsToStorage(urls);
+  if (error) {
+    console.error('Error updating URL:', error);
+    throw new Error(error.message);
+  }
   
-  return urls[urlIndex];
+  return data as UrlData;
 };
 
 // Delete a URL
 export const deleteUrl = async (id: string): Promise<boolean> => {
-  const urls = getUrlsFromStorage();
-  const filteredUrls = urls.filter(url => url.id !== id);
+  const { error } = await supabase
+    .from('urls')
+    .delete()
+    .eq('id', id);
   
-  if (filteredUrls.length === urls.length) {
-    return false; // URL with this ID not found
+  if (error) {
+    console.error('Error deleting URL:', error);
+    throw new Error(error.message);
   }
   
-  saveUrlsToStorage(filteredUrls);
   return true;
 };

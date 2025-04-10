@@ -1,139 +1,131 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowRight, Link as LinkIcon, BarChart, Shield, Clock, Users } from "lucide-react";
 import AuthModal from "@/components/AuthModal";
+import UserStats from "@/components/UserStats";
 
 const LandingPage = () => {
-  const { user, totalUsers } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const { user } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
     <MainLayout>
-      {/* Hero section */}
-      <section className="bg-gradient-to-b from-white to-secondary py-16 md:py-24">
-        <div className="container px-4 md:px-6 flex flex-col items-center text-center">
-          <div className="flex items-center justify-center p-2 bg-secondary rounded-full mb-4 animate-bounce">
-            <LinkIcon className="h-5 w-5 text-primary" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-4 font-poppins">
-            Short Links, <span className="text-primary">Big Impact</span>
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-[700px] mb-8 font-inter">
-            Create memorable, branded links with our easy-to-use URL shortener.
-            Track clicks, manage links, and boost your online presence.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-            {user ? (
-              <Button asChild className="w-full animate-fade-in" size="lg">
-                <Link to="/dashboard">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-            ) : (
-              <>
-                <Button 
-                  variant="outline" 
-                  className="w-full animate-fade-in" 
-                  size="lg"
-                  onClick={() => setIsAuthModalOpen(true)}
-                >
-                  Log In
-                </Button>
-                <Button 
-                  className="w-full animate-fade-in" 
-                  size="lg"
-                  onClick={() => setIsAuthModalOpen(true)}
-                >
-                  Get Started <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </>
-            )}
-          </div>
-          
-          {/* User count indicator */}
-          <div className="mt-12 flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm border animate-pulse">
-            <Users className="h-4 w-4 text-primary" />
-            <p className="text-sm font-medium">
-              Join <span className="text-primary font-bold">{totalUsers}</span> users already using Snappy.Link
+      {/* Hero Section */}
+      <section className="px-4 py-20 md:py-32 bg-secondary">
+        <div className="container mx-auto max-w-6xl">
+          <div className="flex flex-col items-center text-center">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
+              Shorten, Share, and Track Your Links
+            </h1>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mb-10">
+              Create custom, memorable short links that make your content more shareable and trackable.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Features section */}
-      <section className="py-16 md:py-24">
-        <div className="container px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight mb-4 font-poppins">Powerful URL Shortening Features</h2>
-            <p className="text-muted-foreground max-w-[700px] mx-auto font-inter">
-              Everything you need to create, manage and track your shortened URLs in one place.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="feature-card flex flex-col items-center text-center p-6 bg-white rounded-lg shadow-sm border transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-              <div className="p-3 rounded-full bg-secondary mb-4">
-                <LinkIcon className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-medium mb-2 font-poppins">Custom Short Links</h3>
-              <p className="text-muted-foreground font-inter">
-                Create memorable URLs with custom domains and personalized back-halves.
-              </p>
-            </div>
             
-            {/* Feature 2 */}
-            <div className="feature-card flex flex-col items-center text-center p-6 bg-white rounded-lg shadow-sm border transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-              <div className="p-3 rounded-full bg-secondary mb-4">
-                <BarChart className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-medium mb-2 font-poppins">Click Analytics</h3>
-              <p className="text-muted-foreground font-inter">
-                Track performance with detailed click analytics for each shortened URL.
-              </p>
-            </div>
+            <UserStats />
             
-            {/* Feature 3 */}
-            <div className="feature-card flex flex-col items-center text-center p-6 bg-white rounded-lg shadow-sm border transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-              <div className="p-3 rounded-full bg-secondary mb-4">
-                <Clock className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="text-xl font-medium mb-2 font-poppins">Expiration Dates</h3>
-              <p className="text-muted-foreground font-inter">
-                Set expiration dates for temporary links that automatically deactivate.
-              </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              {user ? (
+                <Button
+                  as={Link}
+                  to="/dashboard"
+                  className="text-white bg-black hover:bg-gray-800 rounded-full px-8 py-6 text-lg"
+                >
+                  Go to Dashboard
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setAuthModalOpen(true)}
+                  className="text-white bg-black hover:bg-gray-800 rounded-full px-8 py-6 text-lg"
+                >
+                  Get Started - It's Free
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA section */}
-      <section className="bg-primary py-16">
-        <div className="container px-4 md:px-6 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 font-poppins">
-            Ready to Shorten Your URLs?
+      {/* Features Section */}
+      <section className="px-4 py-20">
+        <div className="container mx-auto max-w-6xl">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
+            Powerful Features for Your Links
           </h2>
-          <p className="text-primary-foreground/90 max-w-[700px] mx-auto mb-8 font-inter">
-            Join thousands of users who trust Snappy.Link for their URL shortening needs.
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <div className="h-12 w-12 bg-black/10 rounded-lg flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 015.656 0l4 4a4 4 0 01-5.656 5.656l-1.102-1.101" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Customizable Short Links</h3>
+              <p className="text-muted-foreground">
+                Create memorable, branded short links that reflect your content and are easy to share.
+              </p>
+            </div>
+            
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <div className="h-12 w-12 bg-black/10 rounded-lg flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Analytics & Tracking</h3>
+              <p className="text-muted-foreground">
+                Track clicks and analyze performance to optimize your marketing campaigns.
+              </p>
+            </div>
+            
+            <div className="bg-card p-6 rounded-lg border border-border">
+              <div className="h-12 w-12 bg-black/10 rounded-lg flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Secure & Reliable</h3>
+              <p className="text-muted-foreground">
+                Enterprise-grade security and high availability ensure your links always work.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="px-4 py-20 bg-secondary">
+        <div className="container mx-auto max-w-3xl text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Ready to Shorten Your First URL?
+          </h2>
+          <p className="text-xl text-muted-foreground mb-8">
+            Join thousands of users who already trust our platform for their link management needs.
           </p>
-          {!user && (
-            <Button 
-              asChild 
-              size="lg" 
-              variant="secondary" 
-              className="animate-bounce"
-              onClick={() => setIsAuthModalOpen(true)}
+          {user ? (
+            <Button
+              as={Link}
+              to="/dashboard"
+              className="text-white bg-black hover:bg-gray-800 rounded-full px-8 py-6 text-lg"
             >
-              <div>Create Your Free Account</div>
+              Go to Dashboard
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setAuthModalOpen(true)}
+              className="text-white bg-black hover:bg-gray-800 rounded-full px-8 py-6 text-lg"
+            >
+              Create Free Account
             </Button>
           )}
         </div>
       </section>
 
       {/* Auth Modal */}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </MainLayout>
   );
 };

@@ -19,6 +19,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -63,7 +64,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
     try {
       setIsLoading(true);
-      await signUp(email, password);
+      await signUp(email, password, fullName);
       onClose();
     } catch (err: any) {
       setError(err.message || "Failed to create account");
@@ -76,10 +77,9 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     try {
       setIsLoading(true);
       await signInWithGoogle();
-      onClose();
+      // Note: The modal will close when the user returns from the OAuth flow
     } catch (err: any) {
       setError(err.message || "Failed to sign in with Google");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -89,7 +89,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center justify-center mb-4">
-            <LinkIcon className="h-6 w-6 text-primary mr-2" />
+            <LinkIcon className="h-6 w-6 text-black mr-2" />
             <DialogTitle className="text-2xl font-bold">Snappy.Link</DialogTitle>
           </div>
           <DialogDescription className="text-center">
@@ -130,7 +130,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password-login">Password</Label>
-                  <button type="button" className="text-xs text-primary hover:underline">
+                  <button type="button" className="text-xs text-black hover:underline">
                     Forgot password?
                   </button>
                 </div>
@@ -148,7 +148,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 </div>
               </div>
 
-              <Button className="w-full" type="submit" disabled={isLoading}>
+              <Button className="w-full bg-black hover:bg-gray-800" type="submit" disabled={isLoading}>
                 {isLoading ? "Signing in..." : (
                   <>
                     <LogIn className="mr-2 h-4 w-4" /> Sign In
@@ -179,6 +179,17 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
           
           <TabsContent value="register" className="space-y-4">
             <form onSubmit={handleSignup} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName-register">Full Name (Optional)</Label>
+                <Input
+                  id="fullName-register"
+                  type="text"
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email-register">Email</Label>
                 <div className="relative">
@@ -227,7 +238,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
                 </div>
               </div>
 
-              <Button className="w-full" type="submit" disabled={isLoading}>
+              <Button className="w-full bg-black hover:bg-gray-800" type="submit" disabled={isLoading}>
                 {isLoading ? "Creating account..." : "Create Account"}
               </Button>
             </form>

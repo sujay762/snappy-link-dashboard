@@ -6,13 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -43,7 +36,7 @@ import {
   deleteUrl,
   UrlData,
 } from "@/services/urlService";
-import { domains, isValidUrl, formatUrlForDisplay, formatDate, getFullShortUrl } from "@/utils/url-utils";
+import { isValidUrl, formatUrlForDisplay, formatDate, getFullShortUrl } from "@/utils/url-utils";
 
 const DashboardPage = () => {
   const { user } = useAuth();
@@ -51,7 +44,6 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [longUrl, setLongUrl] = useState("");
   const [shortCode, setShortCode] = useState("");
-  const [selectedDomain, setSelectedDomain] = useState(domains[0].value);
   const [editUrl, setEditUrl] = useState<UrlData | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,10 +83,14 @@ const DashboardPage = () => {
     
     try {
       setIsSubmitting(true);
+      if (!user) {
+        toast.error("You must be logged in to create short URLs");
+        return;
+      }
+      
       const newUrl = await createShortUrl(
-        user!.id,
+        user.id,
         longUrl,
-        selectedDomain,
         shortCode || undefined
       );
       
@@ -104,7 +100,6 @@ const DashboardPage = () => {
       // Reset form
       setLongUrl("");
       setShortCode("");
-      setSelectedDomain(domains[0].value);
     } catch (error: any) {
       toast.error(error.message || "Failed to shorten URL");
     } finally {
@@ -129,7 +124,7 @@ const DashboardPage = () => {
     
     if (!editUrl) return;
     
-    if (!isValidUrl(editUrl.originalUrl)) {
+    if (!isValidUrl(editUrl.original_url)) {
       toast.error("Please enter a valid URL");
       return;
     }
@@ -137,9 +132,9 @@ const DashboardPage = () => {
     try {
       setIsSubmitting(true);
       const updatedUrl = await updateUrl(editUrl.id, {
-        originalUrl: editUrl.originalUrl,
-        shortCode: editUrl.shortCode,
-        domain: editUrl.domain,
+        original_url: editUrl.original_url,
+        short_code: editUrl.short_code,
+        title: editUrl.title,
       });
       
       if (updatedUrl) {
@@ -178,7 +173,7 @@ const DashboardPage = () => {
           <CardContent>
             <form onSubmit={handleCreateShortUrl} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-12">
-                <div className="md:col-span-6">
+                <div className="md:col-span-8">
                   <Input
                     placeholder="Enter long URL (https://...)"
                     value={longUrl}
@@ -193,21 +188,7 @@ const DashboardPage = () => {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <Select value={selectedDomain} onValueChange={setSelectedDomain}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Domain" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {domains.map((domain) => (
-                        <SelectItem key={domain.value} value={domain.value}>
-                          {domain.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="md:col-span-2">
-                  <Button className="w-full" type="submit" disabled={isSubmitting}>
+                  <Button className="w-full bg-black hover:bg-gray-800" type="submit" disabled={isSubmitting}>
                     {isSubmitting ? "Creating..." : "Shorten"}
                   </Button>
                 </div>
@@ -224,7 +205,7 @@ const DashboardPage = () => {
           <CardContent>
             {loading ? (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
               </div>
             ) : urls.length === 0 ? (
               <div className="text-center py-8">
@@ -249,7 +230,7 @@ const DashboardPage = () => {
                   </TableHeader>
                   <TableBody>
                     {urls.map((url) => {
-                      const fullShortUrl = getFullShortUrl(url.shortCode, url.domain);
+                      const fullShortUrl = getFullShortUrl(url.short_code);
                       
                       return (
                         <TableRow key={url.id}>
@@ -258,17 +239,17 @@ const DashboardPage = () => {
                               href={fullShortUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center text-primary hover:underline"
+                              className="flex items-center text-black hover:underline"
                             >
-                              {url.domain}/{url.shortCode}
+                              {window.location.host}/r/{url.short_code}
                               <ExternalLink className="ml-1 h-3 w-3" />
                             </a>
                           </TableCell>
                           <TableCell className="hidden md:table-cell max-w-[200px] truncate">
-                            {formatUrlForDisplay(url.originalUrl)}
+                            {formatUrlForDisplay(url.original_url)}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            {formatDate(url.createdAt)}
+                            {formatDate(url.created_at)}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center">
@@ -329,40 +310,29 @@ const DashboardPage = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Original URL</label>
                   <Input
-                    value={editUrl.originalUrl}
+                    value={editUrl.original_url}
                     onChange={(e) =>
-                      setEditUrl({ ...editUrl, originalUrl: e.target.value })
+                      setEditUrl({ ...editUrl, original_url: e.target.value })
                     }
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Short Code</label>
                   <Input
-                    value={editUrl.shortCode}
+                    value={editUrl.short_code}
                     onChange={(e) =>
-                      setEditUrl({ ...editUrl, shortCode: e.target.value })
+                      setEditUrl({ ...editUrl, short_code: e.target.value })
                     }
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Domain</label>
-                  <Select
-                    value={editUrl.domain}
-                    onValueChange={(value) =>
-                      setEditUrl({ ...editUrl, domain: value })
+                  <label className="text-sm font-medium">Title (Optional)</label>
+                  <Input
+                    value={editUrl.title || ''}
+                    onChange={(e) =>
+                      setEditUrl({ ...editUrl, title: e.target.value || null })
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select domain" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {domains.map((domain) => (
-                        <SelectItem key={domain.value} value={domain.value}>
-                          {domain.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button
@@ -372,7 +342,7 @@ const DashboardPage = () => {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button type="submit" className="bg-black hover:bg-gray-800" disabled={isSubmitting}>
                     {isSubmitting ? "Saving..." : "Save Changes"}
                   </Button>
                 </div>
